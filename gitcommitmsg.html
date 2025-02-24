@@ -1,0 +1,289 @@
+<!DOCTYPE html>  
+<html lang="zh-CN">
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>Commit Message Builder</title>  
+    <style>  
+ 
+        body {  
+            font-family: Arial, sans-serif, Helvetica, Verdana;
+        } 
+        
+        label {  
+            display: block;  
+            margin-bottom: 10px;  
+        }  
+        input[type="text"], textarea, select {  
+            width: 100%;  
+            padding: 10px;  
+            margin-bottom: 20px;  
+        } 
+         
+        #commit-message {  
+            background-color: #fff; /*  */  
+            border: 2px solid blue; /*  */  
+            padding: 10px; /*  */  
+            margin-top: 20px;  
+            font-family: inherit; /*  */  
+            font-size: inherit; /*  */  
+            height: 180px; /* 20px9180px */  
+            overflow-y: auto; /*  */  
+            white-space: pre-wrap; /*  */  
+        } 
+        
+        .copy-button {    
+            background-color: blue;    
+            color: white;    
+            border: none;    
+            padding: 10px 20px;    
+            font-size: 16px;    
+            cursor: pointer;    
+            margin-top: 10px;    
+            border-radius: 10px; /*  */  
+            transition: background-color 0.3s ease; /*  */  
+        }
+        
+        /* 按钮鼠标变色 */  
+        .copy-button:hover {    
+            background-color: darkblue;    
+        }  
+  
+        .error {  
+            color: red;  
+        }
+        
+        /* 添加错误状态的样式 */  
+        .input-error {  
+            border-color: red; /* 输入框变红 */  
+        }  
+  
+        /* 错误消息的样式 */  
+        .error-message {  
+            color: red;  
+            margin-top: 5px; /* 与输入框保持一些距离 */  
+        }  
+        
+        .success-message {  
+    				color: green; /* 使用绿色表示成功消息 */  
+    				margin-left: 10px; /* 与按钮之间有一点间隔 */  
+				}
+    
+        /* 错误提示的样式 */  
+        .error-indicator {  
+            color: red;  
+            display: inline-block; /* 使其与标签内联显示 */  
+            margin-left: 5px; /* 与标签之间有一点间隔 */  
+            display: none; /* 默认隐藏 */  
+        }  
+				
+				/*  */        
+				.container {  
+				    display: flex; /* Flexbox */  
+				    justify-content: space-between; /* */  
+				    align-items: flex-end; /* */  
+				    padding: 1px; /*  */  
+            max-width: 1000px;  
+            margin: 0 auto;  
+        }  
+				  
+				.right-content {    
+				    width: calc(50% - 25px); /* margin-left50px */   
+				    margin-left: 35px;  
+				}  
+				  
+				.left-content {    
+				    /* flex: 1; .right-content */  
+				}     
+				
+				#issues-closed-error {  
+    /* 如果需要，可以为这个特定的错误消息添加特定样式 */  
+}   
+        
+    </style>  
+</head>  
+<body>  
+    <div class="container">
+    	  <div class="left-content">
+		        <h2>Commit Message Builder</h2>  
+		        <label for="type" style="color: blue;">Type:(请选择)</label>  
+		        <select id="type">  
+		            <option value="feat">feat: A new feature</option>  
+		            <option value="fix">fix: A bug fix</option>  
+		            <option value="docs">docs: Documentation only changes</option>  
+		            <option value="style">style: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)</option>  
+		            <option value="refactor">refactor: A code change that neither fixes a bug nor adds a feature</option>  
+		            <option value="test">test: Adding missing tests or correcting existing tests</option>  
+		            <option value="chore">chore: Build process or auxiliary tool changes</option>
+		            <option value="ci">ci: Changes to Continuous Integration Configuration</option>
+		        </select>  
+		  
+		        <label for="scope">Scope (optional):</label>  
+		        <input type="text" id="scope" placeholder="Indicate the software module affected by the commit. e.g., button, input, modal">  
+		  
+		        <label for="subject" style="color: blue;">Subject:（必填）<span id="subject-required" class="error-indicator">Subject是必填哦</span></label>
+		        <input type="text" id="subject" placeholder="Complete the sentence: If applied, this commit...">
+		        <div id="subject-error" class="error-message" style="display: none;">Subject is required.</div>
+		        
+		        <label for="body">Body (optional):</label>  
+		        <textarea id="body" placeholder="Provide a longer description of the change" rows="4"></textarea>  
+		  
+		        <label for="breaking-change">Breaking Change (optional):</label>  
+		        <input type="text" id="breaking-change" placeholder="Describe the breaking change...">
+		  
+
+		        <label for="issues-closed" style="color: blue;">Issues Closed:（必填，格式 #933 类似）</label>    
+<input type="text" id="issues-closed" placeholder="e.g., #933,#934">    
+<div id="issues-closed-error" class="error-message" style="display: none;">Issues Closed is required or Issues Closed must be like #931（多个空格隔开）</div>  
+
+		  
+		        <button class="copy-button" onclick="generateCommitMessage()">Generate Commit Message</button> 
+
+        </div>
+        
+        
+        <div id="commit-message-container" class="right-content">  
+            <div id="commit-message"></div>  
+              <button id="copy-to-clipboard-btn" class="copy-button" onclick="copyToClipboard()">Copy to Clipboard</button>    
+             <span id="copy-success-message" class="success-message" style="display: none;">Commit message copied to clipboard!</span>  
+  
+       </div>
+
+    </div>  
+  
+    <script>   
+        
+        function generateCommitMessage() {  
+    
+            // 清空commit-message的内容  
+    document.getElementById('commit-message').textContent = ''; 
+        	
+   var subjectInput = document.getElementById('subject');    
+    var subjectRequired = document.getElementById('subject-required');    
+    var subject = subjectInput.value.trim();    
+  
+    if (!subject) {    
+        subjectRequired.textContent = '（必填）'; // 修改文本内容以显示错误    
+        subjectRequired.style.display = 'inline-block'; // 显示错误提示    
+        subjectInput.focus(); // 让输入框获得焦点    
+        return;    
+    }  
+  
+    // 清除之前的错误提示（如果有的话）  
+    subjectRequired.textContent = '';    
+    subjectRequired.style.display = 'none';    
+    
+ 
+     var issuesClosed = document.getElementById('issues-closed').value.trim();  
+    var issuesClosedError = document.getElementById('issues-closed-error');  
+  
+    if (!issuesClosed) {  
+        issuesClosedError.style.display = 'block'; // 显示错误提示  
+        return; // 如果未填写，则不继续生成提交信息  
+    }  
+  
+  
+      // 获取 Issues Closed 输入框的值  
+    var issuesClosed = document.getElementById('issues-closed').value.trim();  
+    var issuesClosedError = document.getElementById('issues-closed-error');  
+  
+    // 验证 Issues Closed 格式  
+    if (!validateIssuesClosed(issuesClosed)) {  
+        issuesClosedError.style.display = 'block'; // 显示错误提示  
+        return; // 如果格式错误，则不继续生成提交信息  
+    }  
+  
+    // 清除之前的错误提示（如果有的话）  
+    issuesClosedError.style.display = 'none';  
+  
+    var type = document.getElementById('type').value;    
+    var scope = document.getElementById('scope').value.trim();    
+    var subject = subjectInput.value.trim(); // 这里不需要再次获取subject的值，因为上面已经获取过了  
+    var body = document.getElementById('body').value.trim();    
+    var breakingChange = document.getElementById('breaking-change').value.trim();    
+    var issuesClosed = document.getElementById('issues-closed').value.trim();    
+  
+  
+            var message = type.split(':')[0]; // Remove description from type  
+            if (scope) {  
+                message += `(${scope})`;  
+            }  
+            message += `: ${subject}`;  
+            if (body) {  
+                message += `\n\n${body}`;  
+            }  
+            if (breakingChange) {  
+                message += `\n\nBREAKING CHANGE: ${breakingChange}`;  
+            }  
+            if (issuesClosed) {  
+                message += `\n\nISSUES CLOSED: ${issuesClosed}`;  
+            }  
+  
+  					message=`git commit -m "` + message + `"`;
+  					
+            document.getElementById('commit-message').textContent = message;  
+            
+    	      // 在成功生成消息后启用复制按钮
+            document.getElementById('copy-to-clipboard-btn').disabled = false;
+        }  
+        
+        
+        // 验证 Issues Closed 格式的辅助函数  
+function validateIssuesClosed(input) {  
+    // 正则表达式匹配 # 后跟一或多个数字，可以包含空格分隔的多个此类项  
+    var issuePattern = /^(#\d+(\s+#\d+)*)$/;  
+    return issuePattern.test(input);  
+}
+
+         
+function copyToClipboard() {  
+    var commitMessage = document.getElementById('commit-message').textContent.trim();  
+    var copySuccessMessage = document.getElementById('copy-success-message');  
+  
+    if (!commitMessage) {  
+        alert('No commit message to copy!');  
+        return;  
+    }  
+  
+    // 创建一个临时的textarea元素  
+    var textarea = document.createElement("textarea");  
+      
+    // 将文本设置为textarea的值  
+    textarea.value = commitMessage;  
+      
+    // 将textarea设置为不可见并添加到body中  
+    textarea.style.position = 'fixed'; // 防止页面滚动  
+    textarea.style.top = 0;  
+    textarea.style.left = 0;  
+    textarea.style.opacity = 0; // 使其完全透明  
+    document.body.appendChild(textarea);  
+      
+    // 选择文本  
+    textarea.select();  
+      
+    try {  
+        // 尝试复制文本  
+        var successful = document.execCommand('copy');  
+        var msg = successful ? 'successful' : 'unsuccessful';  
+        console.log('Copying text command was ' + msg);  
+  
+        // 显示成功消息  
+        copySuccessMessage.textContent = 'Commit message copied to clipboard!';  
+        copySuccessMessage.style.display = 'inline';  
+        setTimeout(function() {  
+            copySuccessMessage.style.display = 'none';  
+        }, 3000);  
+    } catch (err) {  
+        // 复制失败，显示错误消息  
+        console.error('Failed to copy text: ', err);  
+        alert('Failed to copy text');  
+    }  
+      
+    // 移除临时的textarea元素  
+    document.body.removeChild(textarea);  
+}       
+         
+    </script>  
+</body>  
+</html>
+
